@@ -22,9 +22,9 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   calculateStropHeights,
   calculateWindGradient,
-  launchProfile,
+  generateDynamicLaunchProfile,
 } from "../utils";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -34,7 +34,7 @@ import {
   Title,
   Tooltip,
   Legend,
-  TooltipItem
+  TooltipItem,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { config } from "../config/env";
@@ -59,29 +59,18 @@ const HelpPage = () => {
     direction: number;
   }>({ speed: 20, direction: 290 });
   const [launchHeight, setLaunchHeight] = useState<number>(2000);
-  const [windProfile, setWindProfile] = useState<number>(0);
-
-  useEffect(() => {
-    //This
-
-    let closestKey = 0;
-    for (let i = 1; i < launchProfile.length; i++) {
-      if (
-        Math.abs(launchProfile[i].wind - surfaceWind.speed) <
-        Math.abs(launchProfile[closestKey].wind - surfaceWind.speed)
-      ) {
-        closestKey = i;
-      }
-    }
-
-    setWindProfile(closestKey);
-  }, [launchProfile, surfaceWind.speed]);
 
   const stropHeights = calculateStropHeights(
     1000,
     launchHeight,
     surfaceWind.speed,
     [],
+    twoKWind.speed,
+  );
+
+  const dynamicProfile = generateDynamicLaunchProfile(
+    surfaceWind.speed,
+    twoKWind.speed,
   );
 
   const windGradient = calculateWindGradient(
@@ -100,7 +89,6 @@ const HelpPage = () => {
   }[] = [];
 
   stropHeights.forEach((data) => {
-
     const closestWindData = windGradient.reduce((prev, curr) => {
       return Math.abs(curr.height - data.height) <
         Math.abs(prev.height - data.height)
@@ -129,23 +117,18 @@ const HelpPage = () => {
       "90%",
       "100%",
     ],
-    datasets: launchProfile.map((profile, index) => {
-      const colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"];
-      const isHighlighted = index === windProfile;
-
-      return {
-        label: profile.title,
-        data: [0, ...profile.data.map((val) => val * launchHeight)],
-        borderColor: colors[index % colors.length],
-        backgroundColor: colors[index % colors.length] + "20",
-        borderWidth: isHighlighted ? 2 : 1,
+    datasets: [
+      {
+        label: "Dynamic profile",
+        data: [0, ...dynamicProfile.map((val) => Math.round(val * launchHeight))],
+        borderColor: "#ff7f0e",
+        backgroundColor: "#ff7f0e20",
+        borderWidth: 2,
         tension: 0.4,
-        pointRadius: isHighlighted ? 6 : 4,
-        pointHoverRadius: isHighlighted ? 6 : 4,
-        borderDash: isHighlighted ? [] : [5, 5], // Solid line for highlighted, dashed for others
-        zIndex: isHighlighted ? 10 : 1, // Bring highlighted line to front
-      };
-    }),
+        pointRadius: 6,
+        pointHoverRadius: 6,
+      },
+    ],
   };
 
   const chartOptions = {
@@ -154,7 +137,7 @@ const HelpPage = () => {
     plugins: {
       title: {
         display: true,
-        text: "Launch Profiles by Wind Condition",
+        text: "Launch Profile by Wind Condition",
         font: { size: 16 },
       },
       legend: {
@@ -164,14 +147,11 @@ const HelpPage = () => {
         mode: "index" as const,
         intersect: false,
         callbacks: {
-          title: (context: TooltipItem<'line'>[]) => {
+          title: (context: TooltipItem<"line">[]) => {
             return `Launch Progress: ${context[0].label}`;
           },
-          label: (context: TooltipItem<'line'>) => {
-            const datasetIndex = context.datasetIndex;
-            const isHighlighted = datasetIndex === windProfile;
-            const prefix = isHighlighted ? "🎯 " : "";
-            return `${prefix}${context.dataset.label}: ${context.parsed.y} ft`;
+          label: (context: TooltipItem<"line">) => {
+            return `${context.dataset.label}: ${context.parsed.y} ft`;
           },
         },
       },
@@ -285,7 +265,6 @@ const HelpPage = () => {
                 playsInline
                 preload="auto"
                 controls={false}
-                {...({ "webkit-playsinline": "true" } as any)}
                 sx={{
                   width: { xs: "100%", lg: "50%" },
                   height: "auto",
@@ -302,7 +281,6 @@ const HelpPage = () => {
                   muted
                   playsInline
                   preload="auto"
-                  {...({ "webkit-playsinline": "true" } as any)}
                   sx={{
                     width: "100%",
                     height: "auto",
@@ -317,7 +295,6 @@ const HelpPage = () => {
                   muted
                   playsInline
                   preload="auto"
-                  {...({ "webkit-playsinline": "true" } as any)}
                   sx={{
                     width: "100%",
                     height: "auto",
@@ -458,31 +435,26 @@ const HelpPage = () => {
 
               <Grid size={{ xs: 12, lg: 6 }}>
                 <Stack
-                    direction="row"
-                    spacing={2}
-                    justifyContent="flex-start"
-                    width="100%"
-                    sx={{ mb: 2, flexWrap: "wrap", gap: 2 }}>
-                    <Chip
-                        label={`Launch: ${Math.round(launchHeight)} ft`}
-                        color="success"
-                        sx={{ mb: 1, flexGrow: 1 }}
-                    />
-                    <Chip
-                        label={`Surface: ${surfaceWind.speed} kts at ${surfaceWind.direction}°`}
-                        color="primary"
-                        sx={{ mb: 1, flexGrow: 1 }}
-                    />
-                    <Chip
-                        label={`2000ft: ${twoKWind.speed} kts at ${twoKWind.direction}°`}
-                        color="error"
-                        sx={{ mb: 1, flexGrow: 1 }}
-                    />
-                    <Chip
-                        label={`Profile: ${launchProfile[windProfile].title}`}
-                        color="default"
-                        sx={{ mb: 1, flexGrow: 1 }}
-                    />
+                  direction="row"
+                  spacing={2}
+                  justifyContent="flex-start"
+                  width="100%"
+                  sx={{ mb: 2, flexWrap: "wrap", gap: 2 }}>
+                  <Chip
+                    label={`Launch: ${Math.round(launchHeight)} ft`}
+                    color="success"
+                    sx={{ mb: 1, flexGrow: 1 }}
+                  />
+                  <Chip
+                    label={`Surface: ${surfaceWind.speed} kts at ${surfaceWind.direction}°`}
+                    color="primary"
+                    sx={{ mb: 1, flexGrow: 1 }}
+                  />
+                  <Chip
+                    label={`2000ft: ${twoKWind.speed} kts at ${twoKWind.direction}°`}
+                    color="error"
+                    sx={{ mb: 1, flexGrow: 1 }}
+                  />
                 </Stack>
                 <Table sx={{ width: "100%", tableLayout: "fixed" }}>
                   <TableHead sx={{ backgroundColor: "rgba(0, 0, 0, 0.05)" }}>
