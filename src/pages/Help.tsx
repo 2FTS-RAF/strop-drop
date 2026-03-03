@@ -60,21 +60,21 @@ const HelpPage = () => {
     direction: number;
   }>({ speed: 20, direction: 290 });
   const [launchHeight, setLaunchHeight] = useState<number>(2000);
-  const [windProfile, setWindProfile] = useState<number>(0);
+//   const [windProfile, setWindProfile] = useState<number>(0);
 
-  useEffect(() => {
-    let closestKey = 0;
-    for (let i = 1; i < launchProfile.length; i++) {
-      if (
-        Math.abs(launchProfile[i].wind - surfaceWind.speed) <
-        Math.abs(launchProfile[closestKey].wind - surfaceWind.speed)
-      ) {
-        closestKey = i;
-      }
-    }
+//   useEffect(() => {
+//     let closestKey = 0;
+//     for (let i = 1; i < launchProfile.length; i++) {
+//       if (
+//         Math.abs(launchProfile[i].wind - surfaceWind.speed) <
+//         Math.abs(launchProfile[closestKey].wind - surfaceWind.speed)
+//       ) {
+//         closestKey = i;
+//       }
+//     }
 
-    setWindProfile(closestKey);
-  }, [launchProfile, surfaceWind.speed]);
+//     setWindProfile(closestKey);
+//   }, [launchProfile, surfaceWind.speed]);
 
   const stropHeights = calculateStropHeights(
     1000,
@@ -135,8 +135,8 @@ const HelpPage = () => {
     ],
     datasets: [
       {
-        label: "Dynamic Profile",
-        data: [...dynamicProfile.map((val) => val * launchHeight)],
+        label: "Dynamic profile",
+        data: [0, ...dynamicProfile.map((val) => Math.round(val * launchHeight))],
         borderColor: "#ff7f0e",
         backgroundColor: "#ff7f0e20",
         borderWidth: 2,
@@ -145,23 +145,6 @@ const HelpPage = () => {
         pointHoverRadius: 6,
       },
     ],
-    // datasets: launchProfile.map((profile, index) => {
-    //   const colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"];
-    //   const isHighlighted = index === windProfile;
-
-    //   return {
-    //     label: profile.title,
-    //     data: [0, ...profile.data.map((val) => val * launchHeight)],
-    //     borderColor: colors[index % colors.length],
-    //     backgroundColor: colors[index % colors.length] + "20",
-    //     borderWidth: isHighlighted ? 2 : 1,
-    //     tension: 0.4,
-    //     pointRadius: isHighlighted ? 6 : 4,
-    //     pointHoverRadius: isHighlighted ? 6 : 4,
-    //     borderDash: isHighlighted ? [] : [5, 5], // Solid line for highlighted, dashed for others
-    //     zIndex: isHighlighted ? 10 : 1, // Bring highlighted line to front
-    //   };
-    // }),
   };
 
   const chartOptions = {
@@ -170,7 +153,7 @@ const HelpPage = () => {
     plugins: {
       title: {
         display: true,
-        text: "Launch Profiles by Wind Condition",
+        text: "Launch Profile by Wind Condition",
         font: { size: 16 },
       },
       legend: {
@@ -184,10 +167,7 @@ const HelpPage = () => {
             return `Launch Progress: ${context[0].label}`;
           },
           label: (context: TooltipItem<"line">) => {
-            const datasetIndex = context.datasetIndex;
-            const isHighlighted = datasetIndex === windProfile;
-            const prefix = isHighlighted ? "🎯 " : "";
-            return `${prefix}${context.dataset.label}: ${context.parsed.y} ft`;
+            return `${context.dataset.label}: ${context.parsed.y} ft`;
           },
         },
       },
@@ -489,11 +469,6 @@ const HelpPage = () => {
                   <Chip
                     label={`2000ft: ${twoKWind.speed} kts at ${twoKWind.direction}°`}
                     color="error"
-                    sx={{ mb: 1, flexGrow: 1 }}
-                  />
-                  <Chip
-                    label={`Profile: ${launchProfile[windProfile].title}`}
-                    color="default"
                     sx={{ mb: 1, flexGrow: 1 }}
                   />
                 </Stack>
