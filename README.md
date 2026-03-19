@@ -1,73 +1,132 @@
-# React + TypeScript + Vite
+# Strop Drop Visualiser
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based web application designed to assist glider pilots and operation supervisors in calculating and visualising the likely impact areas for cable strop drops during winch launch operations.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The Strop Drop Visualiser provides a safety tool for gliding operations by predicting where a cable strop will land if a weak link fails during a winch launch. The application uses physics-based calculations combined with real-time wind data to generate visual drop zones on an interactive map.
 
-## React Compiler
+## Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🎯 Interactive Map Visualization
+- Drag-and-drop winch and launch point positioning
+- Real-time strop drop zone calculations
+- Visual safety margins and impact areas
+- Responsive design for desktop and mobile use
 
-## Expanding the ESLint configuration
+### 🌪️ Dynamic Wind Analysis
+- Surface and 2000ft wind input controls
+- Real-time crosswind component calculations
+- Wind gradient modeling throughout launch height
+- Visual wind dial with directional indicators
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 📊 Advanced Launch Profiles
+- Dynamic S-curve launch profiles based on wind conditions
+- Interactive Chart.js visualizations
+- Real-time profile adjustments
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### ⚙️ Comprehensive Parameter Controls
+- Launch height adjustment (100-3000ft)
+- Wind speed and direction controls
+- Strop characteristics (weight, diameter, length)
+- Safety buffer configuration
+- Custom launch profile support
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Technology Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Frontend**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **UI Framework**: Material-UI (MUI)
+- **Mapping**: Leaflet with OpenStreetMap
+- **Charts**: Chart.js with react-chartjs-2
+- **Deployment**: GitHub Pages with GitHub Actions
+
+## Physics Model
+
+The application uses simplified physics to simulate strop drop behavior:
+
+- **Drop Speed**: Based on 2FTS and RAFGSA data (≈20m/s average)
+- **Wind Gradient**: Linear interpolation between surface and 2000ft conditions
+- **Safety Margin**: 25% buffer applied to all calculations
+- **Launch Profiles**: Dynamic S-curves influenced by wind conditions
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn package manager
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/lukedale90/cable-zone.git
+cd cable-zone
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Environment Configuration
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Create a `.env` file in the root directory:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_APP_ORGANIZATION="" 
+VITE_BASE_URL="/cable-zone/"
 ```
+
+or the 2FTS version
+
+```env
+VITE_APP_ORGANIZATION="2fts" 
+VITE_BASE_URL="/strop-drop/"
+```
+
+## Deployment
+
+The application is configured for automated deployment to GitHub Pages:
+
+1. Push to main branch triggers GitHub Actions workflow
+2. Builds the application with production settings
+3. Deploys to GitHub Pages automatically
+
+### Manual Deployment
+
+```bash
+npm run build
+npm run preview
+```
+
+## Usage
+
+1. **Set Launch Parameters**: Adjust winch location, launch point, and release height
+2. **Configure Wind Conditions**: Input surface and 2000ft wind speed/direction
+3. **Analyze Results**: View calculated drop zones and safety areas on the map
+4. **Adjust Settings**: Fine-tune strop characteristics and safety margins
+
+## Safety Notice
+
+⚠️ **Important**: This tool provides estimated calculations for planning purposes only. Always follow established safety procedures and local regulations for gliding operations. Actual strop drop locations may vary due to factors not modeled in this simulation.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contact
+
+For questions or support, please contact: Luke.Dale828@mod.gov.uk
