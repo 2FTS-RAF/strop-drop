@@ -277,6 +277,7 @@ const Map = () => {
 
     //setRWYHeading(brng);
     setParameters((prev) => ({ ...prev, RWYHeading: brng }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parameters.winchLocation, parameters.launchPoint]);
 
   useEffect(() => {
@@ -301,11 +302,11 @@ const Map = () => {
       ...prev,
       theroreticalMaxHeight: Math.round(theoreticalMaxHeight),
     }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     parameters.cableLength,
-    parameters.surfaceWind,
-    parameters.twoThousandFtWind,
-    setParameters,
+    parameters.surfaceWind.speed,
+    parameters.twoThousandFtWind.speed,
   ]);
 
   //update headwind and crosswind components
