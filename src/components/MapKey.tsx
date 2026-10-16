@@ -24,11 +24,14 @@ const MapKeyContainer: React.FC = () => {
         spacing={1}
         alignItems="center"
         justifyContent={isSmallScreen ? "space-between" : "flex-start"}>
-        <Typography variant="caption" align="center" sx={{ pl: 2 }}>
-          Map Key:
-        </Typography>
+        {/* Shorter labels on mobile so all three keys fit on one row */}
+        {!isSmallScreen && (
+          <Typography variant="caption" align="center" sx={{ pl: 2 }}>
+            Map Key:
+          </Typography>
+        )}
         <Chip
-          label="Potential Strop Impact Area"
+          label={isSmallScreen ? "Strop Impact Area" : "Potential Strop Impact Area"}
           variant="filled"
           color="error"
           size="small"
@@ -40,6 +43,16 @@ const MapKeyContainer: React.FC = () => {
           color="warning"
           size="small"
           sx={{ flexGrow: 1 }}
+        />
+        <Chip
+          label={isSmallScreen ? "Boundary" : "Airfield Boundary"}
+          variant="outlined"
+          size="small"
+          sx={{
+            flexGrow: 1,
+            border: "2px dashed #4fc3f7",
+            backgroundColor: "#ffffffcc",
+          }}
         />
       </Stack>
     </div>

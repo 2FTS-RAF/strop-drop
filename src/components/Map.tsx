@@ -24,8 +24,11 @@ import {
   calculateStropHeights,
   calculateWindComponents,
   calculateWindGradient,
+  findCrossedBoundaries,
 } from "../utils";
+import { locationOptions } from "../utils/available-sites";
 import MapKeyContainer from "./MapKey";
+import BoundaryAlert from "./BoundaryAlert";
 
 type Coordinate = {
   lat: number;
@@ -269,6 +272,11 @@ const Map = () => {
   // >([]);
 
   const [sausagePolygon, setSausagePolygon] = React.useState<Coordinate[]>([]);
+
+  const crossedBoundaries = React.useMemo(
+    () => findCrossedBoundaries(sausagePolygon, locationOptions),
+    [sausagePolygon],
+  );
   //const [RWYHeading, setRWYHeading] = React.useState<number>(0);
   // Create a custom yellow circle icon
   const winchIcon = L.divIcon({
@@ -556,6 +564,22 @@ const Map = () => {
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           attribution="&copy; <a href='https://www.esri.com/'>Esri</a> contributors"
         />
+        {/* Airfield boundaries */}
+        {locationOptions
+          .filter((site) => site.boundary)
+          .map((site) => (
+            <Polygon
+              key={site.name}
+              positions={site.boundary!}
+              pathOptions={{
+                color: "#4fc3f7",
+                weight: 2,
+                dashArray: "6, 6",
+                fill: false,
+              }}
+              interactive={false}
+            />
+          ))}
         <Marker
           position={parameters.winchLocation}
           icon={winchIcon}
@@ -770,6 +794,7 @@ const Map = () => {
         />
       </MapContainer>
       <WindDialContainer />
+      <BoundaryAlert crossedBoundaries={crossedBoundaries} />
       <MapKeyContainer />
     </div>
   );
