@@ -7,3 +7,4 @@ export * from "./calculate-average-direction";
 export * from "./calculate-wind-components";
 export * from "./launch-profile";
 export * from "./fetch-live-wind";
+export * from "./airfield-boundary";
