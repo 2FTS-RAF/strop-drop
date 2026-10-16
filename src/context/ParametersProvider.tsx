@@ -24,6 +24,7 @@ export interface Parameters {
   crossWindComponent: number;
   headWindComponent: number;
   RWYHeading: number;
+  windSource: "live" | "manual";
 }
 
 export interface ParametersContextType {
@@ -32,7 +33,10 @@ export interface ParametersContextType {
   resetStropParameters: () => void;
 }
 
-const defaultParameters = {
+const defaultParameters: Omit<
+  Parameters,
+  "stropWeight" | "stropLength" | "stropDiameter"
+> = {
   zoomLevel: 16,
   viewLocation: { lat: 53.0425, lng: -0.496 }, // Default location
   winchLocation: { lat: 53.040309945932215, lng: -0.5006074905395509 },
@@ -48,6 +52,7 @@ const defaultParameters = {
   crossWindComponent: 0,
   headWindComponent: 0,
   RWYHeading: 247,
+  windSource: "live",
 };
 
 const defaultStrop = {
@@ -63,13 +68,12 @@ export const ParametersProvider: React.FC<ParametersProviderProps> = ({
     // Load parameters from localStorage on initialization
     const savedParameters = localStorage.getItem("parameters");
 
-    return savedParameters
-      ? JSON.parse(savedParameters)
-      : {
-          // Default parameters
-          ...defaultParameters,
-          ...defaultStrop,
-        };
+    // Saved values are merged over the defaults so newly added parameters get a value
+    return {
+      ...defaultParameters,
+      ...defaultStrop,
+      ...(savedParameters ? JSON.parse(savedParameters) : {}),
+    };
   });
 
   const resetStropParameters = () => {
