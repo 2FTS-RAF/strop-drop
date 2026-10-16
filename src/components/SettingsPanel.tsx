@@ -7,6 +7,10 @@ import {
   AccordionDetails,
   Button,
   Tooltip,
+  Alert,
+  Link,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { AccordionProps } from "@mui/material/Accordion";
@@ -21,8 +25,13 @@ import AirIcon from "@mui/icons-material/Air";
 import SwapCallsIcon from "@mui/icons-material/SwapCalls";
 import SecurityIcon from "@mui/icons-material/Security";
 import SaveIcon from "@mui/icons-material/Save";
+import SensorsIcon from "@mui/icons-material/Sensors";
+import TuneIcon from "@mui/icons-material/Tune";
+import UpdateIcon from "@mui/icons-material/Update";
 
+import { useLiveWind } from "../context/LiveWindContext";
 import { calculateTerminalVelocity } from "../utils/calculate-strop-drift";
+import { LIVE_WIND_POLL_INTERVAL_MS } from "../utils/fetch-live-wind";
 import LaunchProfileControl from "./LaunchProfileControl";
 import SavedScenarios from "./savedScenarios";
 import { config } from "../config/env";
@@ -66,6 +75,8 @@ const MobileOptimizedSlider = styled(Slider)({
 
 const SettingsPanel = () => {
   const { parameters, setParameters, resetStropParameters } = useParameters();
+  const { isLoading, lastUpdated } = useLiveWind();
+  const isLive = parameters.windSource === "live";
 
   const appOrg = config.APP_ORGANIZATION;
 
@@ -158,6 +169,7 @@ const SettingsPanel = () => {
               max={50}
               step={1}
               valueLabelDisplay="auto"
+              disabled={isLive}
             />
             <Stack
               direction="row"
@@ -188,6 +200,7 @@ const SettingsPanel = () => {
               step={1}
               color="error"
               valueLabelDisplay="auto"
+              disabled={isLive}
             />
             <LaunchProfileControl
               activeWind={parameters.surfaceWind.speed}
@@ -207,6 +220,79 @@ const SettingsPanel = () => {
         </AccordionSummary>
         <AccordionDetails>
           <Stack spacing={2}>
+            <ToggleButtonGroup
+              value={parameters.windSource}
+              exclusive
+              fullWidth
+              size="small"
+              color="primary"
+              onChange={(_, value) => {
+                if (value) handleChange("windSource", value);
+              }}
+              sx={{
+                "& .MuiToggleButton-root": {
+                  // App.css forces 16px on all buttons, which wraps these labels on mobile.
+                  // On phones the icon sits above a sentence-case label so it fits at 320px.
+                  fontSize: { xs: "0.75rem !important", sm: "0.8125rem !important" },
+                  flexDirection: { xs: "column", sm: "row" },
+                  textTransform: { xs: "none", sm: "uppercase" },
+                  lineHeight: { xs: 1.3, sm: 1.75 },
+                  whiteSpace: "nowrap",
+                  gap: 0.5,
+                  px: 1,
+                },
+                "& .MuiSvgIcon-root": { fontSize: "1.1rem" },
+              }}>
+              <ToggleButton value="live">
+                <SensorsIcon />
+                Live wind
+              </ToggleButton>
+              <ToggleButton value="manual">
+                <TuneIcon />
+                Manual override
+              </ToggleButton>
+            </ToggleButtonGroup>
+            {isLive && (
+              <Alert severity="info">
+                <Stack spacing={1}>
+                  <Typography variant="body2">
+                    Live wind at the launch point is being used. It updates
+                    automatically{" "}
+                    <strong>
+                      every {LIVE_WIND_POLL_INTERVAL_MS / 60000} minutes
+                    </strong>
+                    .
+                  </Typography>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="caption">Last updated</Typography>
+                    <Chip
+                      size="small"
+                      color="info"
+                      icon={<UpdateIcon />}
+                      label={
+                        isLoading && !lastUpdated
+                          ? "Fetching…"
+                          : (lastUpdated?.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }) ?? "–")
+                      }
+                    />
+                  </Stack>
+                  <Typography variant="caption">
+                    Weather data by{" "}
+                    <Link
+                      href="https://open-meteo.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ whiteSpace: "nowrap" }}>
+                      Open-Meteo.com
+                    </Link>{" "}
+                    (Met Office UKMO model)
+                  </Typography>
+                </Stack>
+              </Alert>
+            )}
             <Stack spacing={3} direction="row" justifyContent="space-between">
               <Stack justifyContent="space-around" alignItems="center">
                 <Typography variant="caption">Surface Wind</Typography>
@@ -237,6 +323,7 @@ const SettingsPanel = () => {
                   step={5}
                   valueLabelDisplay="auto"
                   valueLabelFormat={(value) => `${value}°`}
+                  disabled={isLive}
                 />
                 <MobileOptimizedSlider
                   value={parameters.surfaceWind.speed}
@@ -256,6 +343,7 @@ const SettingsPanel = () => {
                   max={50}
                   valueLabelDisplay="auto"
                   valueLabelFormat={(value) => `${value} kts`}
+                  disabled={isLive}
                 />
               </Stack>
             </Stack>
@@ -292,6 +380,7 @@ const SettingsPanel = () => {
                   step={5}
                   valueLabelDisplay="auto"
                   valueLabelFormat={(value) => `${value}°`}
+                  disabled={isLive}
                 />
                 <MobileOptimizedSlider
                   color="error"
@@ -312,6 +401,7 @@ const SettingsPanel = () => {
                   max={50}
                   valueLabelDisplay="auto"
                   valueLabelFormat={(value) => `${value} kts`}
+                  disabled={isLive}
                 />
               </Stack>
             </Stack>
