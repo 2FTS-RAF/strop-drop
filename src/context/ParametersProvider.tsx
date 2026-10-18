@@ -1,5 +1,10 @@
 import React, { useEffect, useState, type ReactNode } from "react";
 import { ParametersContext } from "./ParametersContext";
+import type { RunwaySurface } from "../utils/ask21Landing";
+import {
+  DEFAULT_LANDING_SAFETY_FACTOR,
+  LANDING_SAFETY_FACTORS,
+} from "../utils/landing-area";
 
 export interface ParametersProviderProps {
   children: ReactNode;
@@ -25,6 +30,8 @@ export interface Parameters {
   headWindComponent: number;
   RWYHeading: number;
   windSource: "live" | "manual";
+  landingSurface: RunwaySurface;
+  landingSafetyFactor: number;
 }
 
 export interface ParametersContextType {
@@ -53,6 +60,8 @@ const defaultParameters: Omit<
   headWindComponent: 0,
   RWYHeading: 247,
   windSource: "live",
+  landingSurface: "dryGrass",
+  landingSafetyFactor: DEFAULT_LANDING_SAFETY_FACTOR,
 };
 
 const defaultStrop = {
@@ -69,11 +78,22 @@ export const ParametersProvider: React.FC<ParametersProviderProps> = ({
     const savedParameters = localStorage.getItem("parameters");
 
     // Saved values are merged over the defaults so newly added parameters get a value
-    return {
+    const loaded: Parameters = {
       ...defaultParameters,
       ...defaultStrop,
       ...(savedParameters ? JSON.parse(savedParameters) : {}),
     };
+
+    // A saved safety factor that is no longer one of the options falls back to the default
+    if (
+      !LANDING_SAFETY_FACTORS.some(
+        ({ value }) => value === loaded.landingSafetyFactor,
+      )
+    ) {
+      loaded.landingSafetyFactor = DEFAULT_LANDING_SAFETY_FACTOR;
+    }
+
+    return loaded;
   });
 
   const resetStropParameters = () => {

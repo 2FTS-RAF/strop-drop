@@ -53,7 +53,8 @@ const LandingPage = () => {
           }}>
           <CssBaseline />
           <Header isSmallScreen={isSmallScreen} toggleDrawer={toggleDrawer} />
-          <div style={{ flex: 1, display: "flex", maxHeight: "100vh" }}>
+          {/* minHeight 0 keeps this row within the viewport so the settings panel scrolls instead of the page */}
+          <div style={{ flex: 1, display: "flex", maxHeight: "100vh", minHeight: 0 }}>
             {!isSmallScreen && (
               <div
                 style={{

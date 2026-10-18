@@ -25,6 +25,10 @@ import {
   calculateWindComponents,
   calculateWindGradient,
   findCrossedBoundaries,
+  calculateLandingArea,
+  getLandingDistances,
+  LANDING_LINE_COLOURS,
+  LANDING_SURFACE_COLOURS,
 } from "../utils";
 import { locationOptions } from "../utils/available-sites";
 import MapKeyContainer from "./MapKey";
@@ -272,6 +276,30 @@ const Map = () => {
   // >([]);
 
   const [sausagePolygon, setSausagePolygon] = React.useState<Coordinate[]>([]);
+
+  const landingDistances = React.useMemo(
+    () =>
+      getLandingDistances(
+        parameters.headWindComponent,
+        parameters.landingSurface,
+        parameters.landingSafetyFactor,
+      ),
+    [
+      parameters.headWindComponent,
+      parameters.landingSurface,
+      parameters.landingSafetyFactor,
+    ],
+  );
+
+  const landingArea = React.useMemo(
+    () =>
+      calculateLandingArea(
+        parameters.launchPoint,
+        parameters.RWYHeading,
+        landingDistances,
+      ),
+    [parameters.launchPoint, parameters.RWYHeading, landingDistances],
+  );
 
   const crossedBoundaries = React.useMemo(
     () => findCrossedBoundaries(sausagePolygon, locationOptions),
@@ -580,6 +608,28 @@ const Map = () => {
               interactive={false}
             />
           ))}
+        {/* Landing area behind the launch point; shading covers the ground roll only */}
+        <Polygon
+          positions={landingArea.groundRollArea}
+          pathOptions={{
+            stroke: false,
+            fillColor: LANDING_SURFACE_COLOURS[parameters.landingSurface],
+            fillOpacity: 0.55,
+          }}
+          interactive={false}
+        />
+        {[
+          { key: "aim", line: landingArea.aimLine, colour: LANDING_LINE_COLOURS.aim },
+          { key: "touchdown", line: landingArea.touchdownLine, colour: LANDING_LINE_COLOURS.touchdown },
+          { key: "stop", line: landingArea.stopLine, colour: LANDING_LINE_COLOURS.stop },
+        ].map(({ key, line, colour }) => (
+          <Polyline
+            key={key}
+            positions={line}
+            pathOptions={{ color: colour, weight: 3 }}
+            interactive={false}
+          />
+        ))}
         <Marker
           position={parameters.winchLocation}
           icon={winchIcon}

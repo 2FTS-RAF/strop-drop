@@ -8,3 +8,5 @@ export * from "./calculate-wind-components";
 export * from "./launch-profile";
 export * from "./fetch-live-wind";
 export * from "./airfield-boundary";
+export * from "./ask21Landing";
+export * from "./landing-area";
