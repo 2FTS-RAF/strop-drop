@@ -1,13 +1,31 @@
+import { useEffect } from "react";
 import { Alert, Snackbar } from "@mui/material";
 import { useLiveWind } from "../context/LiveWindContext";
+import {
+  installAudioUnlock,
+  startChime,
+  stopChime,
+} from "../utils/alarm-sound";
 
 const LiveWindErrorSnackbar = () => {
   const { error, dismissError } = useLiveWind();
+  const isOpen = error !== null;
+
+  // Browsers block audio until the user interacts with the page
+  useEffect(() => installAudioUnlock(), []);
+
+  // Chime occasionally until the message is dismissed
+  useEffect(() => {
+    if (!isOpen) return;
+
+    startChime();
+    return () => stopChime();
+  }, [isOpen]);
 
   return (
+    // Stays open until dismissed, so the chime only stops when the user acknowledges it
     <Snackbar
-      open={error !== null}
-      autoHideDuration={10000}
+      open={isOpen}
       onClose={(_, reason) => {
         if (reason !== "clickaway") dismissError();
       }}

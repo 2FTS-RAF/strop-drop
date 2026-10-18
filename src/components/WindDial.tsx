@@ -317,37 +317,46 @@ const LaunchProfileMiniChart: React.FC<{
         startOffset={0.12}
         speedFactor={cloudSpeedFactor * 0.75}
       />
-      <div style={{ width: "100%", height: "100%", zIndex: 2, position: "relative" }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          zIndex: 2,
+          position: "relative",
+        }}>
         <Line data={chartData} options={options} />
       </div>
     </div>
   );
 };
 
-const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ size = 40, isSmallScreen }) => {
+const CompassRose: React.FC<{ size?: number; isSmallScreen?: boolean }> = ({
+  size = 40,
+  isSmallScreen,
+}) => {
   const SCALE_FACTOR = 2.2; // Adjust this single value to make compass bigger/smaller
-  
+
   const height = size * 2; // Maintain 1:2 aspect ratio - SAME as other dials
   const centerX = size / 2;
   const centerY = height / 2; // Center vertically in the same space as other dials
-  const radius = (size * 0.4) * SCALE_FACTOR; // Base radius scaled by factor
-  
+  const radius = size * 0.4 * SCALE_FACTOR; // Base radius scaled by factor
+
   // Generate tick marks and labels for compass
   const majorTicks = [];
   const minorTicks = [];
   const labels = [];
-  
+
   for (let i = 0; i < 360; i += 30) {
     const angle = (i - 90) * (Math.PI / 180); // Rotate so 0° is at top
     const outerRadius = radius * 0.95; // Extend ticks closer to edge
     const innerRadius = radius * 0.7; // Longer tick marks
     const labelRadius = radius * 1.15; // Move labels closer to center for readability
-    
+
     const x1 = centerX + Math.cos(angle) * innerRadius;
     const y1 = centerY + Math.sin(angle) * innerRadius;
     const x2 = centerX + Math.cos(angle) * outerRadius;
     const y2 = centerY + Math.sin(angle) * outerRadius;
-    
+
     majorTicks.push(
       <line
         key={`major-${i}`}
@@ -357,15 +366,15 @@ const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ siz
         y2={y2}
         stroke="rgba(0, 0, 0, 0.2)"
         strokeWidth="1.2"
-      />
+      />,
     );
-    
+
     // Add labels for cardinal directions
     const labelX = centerX + Math.cos(angle) * labelRadius;
     const labelY = centerY + Math.sin(angle) * labelRadius;
-    
+
     if (i % 90 === 0) {
-      const label = i === 0 ? 'N' : i === 90 ? 'E' : i === 180 ? 'S' : 'W';
+      const label = i === 0 ? "N" : i === 90 ? "E" : i === 180 ? "S" : "W";
       labels.push(
         <text
           key={`label-${i}`}
@@ -375,26 +384,26 @@ const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ siz
           dominantBaseline="middle"
           fontSize={size / 5}
           fill="rgba(0, 0, 0, 0.46)"
-          fontWeight="bold"
-        >
+          fontWeight="bold">
           {label}
-        </text>
+        </text>,
       );
     }
   }
-  
+
   // Minor tick marks every 10 degrees
   for (let i = 0; i < 360; i += 10) {
-    if (i % 30 !== 0) { // Skip major tick positions
+    if (i % 30 !== 0) {
+      // Skip major tick positions
       const angle = (i - 90) * (Math.PI / 180);
       const outerRadius = radius * 0.95; // Match major tick outer radius
       const innerRadius = radius * 0.85; // Longer minor ticks
-      
+
       const x1 = centerX + Math.cos(angle) * innerRadius;
       const y1 = centerY + Math.sin(angle) * innerRadius;
       const x2 = centerX + Math.cos(angle) * outerRadius;
       const y2 = centerY + Math.sin(angle) * outerRadius;
-      
+
       minorTicks.push(
         <line
           key={`minor-${i}`}
@@ -404,29 +413,27 @@ const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ siz
           y2={y2}
           stroke="rgba(0, 0, 0, 0.25)"
           strokeWidth="0.5"
-        />
+        />,
       );
     }
   }
-  
+
   return (
     <svg
       width={size}
       height={height}
       xmlns="http://www.w3.org/2000/svg"
-      overflow="visible"
-    >
+      overflow="visible">
       {/* Outer compass ring */}
       <circle
         cx={centerX}
         cy={centerY}
-        r={radius * 0.98} 
+        r={radius * 0.98}
         fill="rgba(255, 255, 255, 0)"
         stroke="rgba(0, 0, 0, 0.2)"
         strokeWidth="1.5"
       />
-    
-      
+
       {/* Tick marks */}
       {isSmallScreen ? null : (
         <>
@@ -437,14 +444,9 @@ const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ siz
 
       {/* Labels */}
       {labels}
-      
+
       {/* Center dot */}
-      <circle
-        cx={centerX}
-        cy={centerY}
-        r="20"
-        fill="rgba(0, 0, 0, 0.12)"
-      />
+      <circle cx={centerX} cy={centerY} r="20" fill="rgba(0, 0, 0, 0.12)" />
     </svg>
   );
 };
@@ -484,14 +486,15 @@ const WindDialContainer: React.FC = () => {
       style={{
         position: "absolute",
         top: isSmallScreen ? "unset" : "10px",
-        bottom: isSmallScreen ? "60px" : "unset",
+        bottom: isSmallScreen ? "92px" : "unset", // clears the two-row map key on mobile
         right: isSmallScreen ? "unset" : "10px",
         left: isSmallScreen ? "10px" : "unset",
         width: isSmallScreen ? "calc(100% - 20px)" : "auto",
         zIndex: 1000,
-        backgroundColor: "#ffffff94",
+        backgroundColor: "#ffffff7b",
         borderRadius: "8px",
         padding: 10,
+        backdropFilter: "blur(2px)",
       }}>
       <Stack
         direction={isSmallScreen ? "row" : "column"}
@@ -515,7 +518,10 @@ const WindDialContainer: React.FC = () => {
               textAlign: "center",
               zIndex: 0,
             }}>
-            <CompassRose size={isSmallScreen ? 30 : 40} isSmallScreen={isSmallScreen} />
+            <CompassRose
+              size={isSmallScreen ? 30 : 40}
+              isSmallScreen={isSmallScreen}
+            />
           </div>
           <div
             style={{
@@ -615,10 +621,10 @@ const WindDialContainer: React.FC = () => {
                 variant="outlined"
                 sx={{
                   flexGrow: 1,
-                   bgcolor: orange[100],
+                  bgcolor: orange[100],
                   borderColor: orange[800],
                   color: orange[900],
-                  "& .MuiChip-icon": { color: orange[900]},
+                  "& .MuiChip-icon": { color: orange[900] },
                   animation: `${livePulse} 2s ease-out infinite`,
                   "@media (prefers-reduced-motion: reduce)": {
                     animation: "none",

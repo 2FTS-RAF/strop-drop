@@ -37,7 +37,7 @@ const deploymentConfig = getDeploymentConfig();
 export const config = {
   APP_NAME: import.meta.env.VITE_APP_NAME || deploymentConfig.APP_NAME,
   APP_DESCRIPTION: import.meta.env.VITE_APP_DESCRIPTION || deploymentConfig.APP_DESCRIPTION,
-  APP_VERSION: 1.1,
+  APP_VERSION: 1.2,
   APP_ORGANIZATION: import.meta.env.VITE_APP_ORGANIZATION || deploymentConfig.APP_ORGANIZATION,
   DEFAULT_LANGUAGE: "en",
   BASE_URL: import.meta.env.VITE_BASE_URL || deploymentConfig.BASE_URL,

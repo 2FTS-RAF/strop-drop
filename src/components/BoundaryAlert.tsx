@@ -3,18 +3,22 @@ import {
   Alert,
   AlertTitle,
   Button,
-  Chip,
   Stack,
-  Typography,
   useMediaQuery,
 } from "@mui/material";
+import { alpha, keyframes } from "@mui/material/styles";
 import WarningIcon from "@mui/icons-material/Warning";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
-import { startAlarm, stopAlarm, unlockAlarmAudio } from "../utils/alarm-sound";
+import SnoozeIcon from '@mui/icons-material/Snooze';
+import { installAudioUnlock, startAlarm, stopAlarm } from "../utils/alarm-sound";
 
 const SNOOZE_MS = 5 * 60 * 1000; // 5 minutes
 
-const UNLOCK_EVENTS = ["pointerdown", "keydown", "touchend"] as const;
+// Banner border switches between white and red to draw the eye
+const borderFlash = keyframes`
+  0% { border-color: #ffffff; }
+  50% { border-color: #ff1744; }
+`;
 
 const BoundaryAlert: React.FC<{ crossedBoundaries: string[] }> = ({
   crossedBoundaries,
@@ -33,22 +37,7 @@ const BoundaryAlert: React.FC<{ crossedBoundaries: string[] }> = ({
   const isAlarmActive = isCrossing && !snoozedUntil && !alarmsCeased;
 
   // Browsers block audio until the user interacts with the page
-  useEffect(() => {
-    const unlock = () => {
-      unlockAlarmAudio();
-      UNLOCK_EVENTS.forEach((event) =>
-        document.removeEventListener(event, unlock, true),
-      );
-    };
-    UNLOCK_EVENTS.forEach((event) =>
-      document.addEventListener(event, unlock, true),
-    );
-
-    return () =>
-      UNLOCK_EVENTS.forEach((event) =>
-        document.removeEventListener(event, unlock, true),
-      );
-  }, []);
+  useEffect(() => installAudioUnlock(), []);
 
   useEffect(() => {
     if (!isAlarmActive) return;
@@ -99,21 +88,41 @@ const BoundaryAlert: React.FC<{ crossedBoundaries: string[] }> = ({
           borderRadius: 4,
           alignItems: "center",
           "& .MuiAlert-icon, & .MuiAlert-action": { py: 0, pt: 0 },
+          bgcolor: (theme) => alpha(theme.palette.error.main, 0.6),
+          backdropFilter: "blur(2px)",
         }}>
         Outside boundary – all alarms ceased
       </Alert>
     );
   } else if (snoozedUntil) {
     content = (
-      <Chip
-        color="error"
-        size="small"
-        icon={<WarningIcon />}
-        label={`Outside boundary – alert snoozed until ${snoozedUntil.toLocaleTimeString(
-          [],
-          { hour: "2-digit", minute: "2-digit" },
-        )}`}
-      />
+      <Alert
+        severity="error"
+        variant="filled"
+        icon={<NotificationsOffIcon fontSize="small" />}
+        action={
+          <Button
+            color="inherit"
+            size="small"
+            sx={buttonSx}
+            onClick={() => setSnoozedUntil(null)}>
+            Undo
+          </Button>
+        }
+        sx={{
+          py: 0,
+          borderRadius: 4,
+          alignItems: "center",
+          bgcolor: (theme) => alpha(theme.palette.error.main, 0.6),
+          backdropFilter: "blur(2px)",
+          "& .MuiAlert-icon, & .MuiAlert-action": { py: 0, pt: 0 },
+        }}>
+        Outside boundary – alert snoozed until{" "}
+        {snoozedUntil.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </Alert>
     );
   } else {
     content = (
@@ -122,12 +131,17 @@ const BoundaryAlert: React.FC<{ crossedBoundaries: string[] }> = ({
         variant="filled"
         // Icon hidden on phones to leave room for both buttons on one row
         icon={isSmallScreen ? false : <WarningIcon />}
-        // Let the message fill the banner so the buttons can sit at either edge
-        sx={{ "& .MuiAlert-message": { flexGrow: 1 } }}>
+        sx={{
+          // Let the message fill the banner so the buttons can sit at either edge
+          "& .MuiAlert-message": { flexGrow: 1 },
+          // 60% background so the map shows through; slight blur keeps the text legible
+          bgcolor: (theme) => alpha(theme.palette.error.main, 0.6),
+          backdropFilter: "blur(2px)",
+          border: "3px solid #ffffff",
+          animation: `${borderFlash} 1s step-end infinite`,
+          "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+        }}>
         <AlertTitle>Strop impact area crosses the airfield boundary</AlertTitle>
-        <Typography variant="body2">
-          Crosses: {crossedBoundaries.join(", ")}
-        </Typography>
         <Stack
           direction="row"
           justifyContent="space-between"
@@ -137,19 +151,21 @@ const BoundaryAlert: React.FC<{ crossedBoundaries: string[] }> = ({
           sx={{ mt: 1.5 }}>
           <Button
             color="inherit"
-            variant="outlined"
+            variant="contained"
             size="small"
-            sx={buttonSx}
+            startIcon={isSmallScreen ? undefined : <SnoozeIcon />}
+            sx={{ bgcolor: 'white', color: 'black', ...buttonSx}}
             onClick={snooze}>
-            Snooze 5 mins
+            Snooze - 5 mins
           </Button>
           <Button
             color="inherit"
             size="small"
+            variant="outlined"
             startIcon={isSmallScreen ? undefined : <NotificationsOffIcon />}
             sx={buttonSx}
             onClick={ceaseAlarms}>
-            Cease alerting
+            Cease all alerts
           </Button>
         </Stack>
       </Alert>
