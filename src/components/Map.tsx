@@ -609,27 +609,31 @@ const Map = () => {
             />
           ))}
         {/* Landing area behind the launch point; shading covers the ground roll only */}
-        <Polygon
-          positions={landingArea.groundRollArea}
-          pathOptions={{
-            stroke: false,
-            fillColor: LANDING_SURFACE_COLOURS[parameters.landingSurface],
-            fillOpacity: 0.55,
-          }}
-          interactive={false}
-        />
-        {[
-          { key: "aim", line: landingArea.aimLine, colour: LANDING_LINE_COLOURS.aim },
-          { key: "touchdown", line: landingArea.touchdownLine, colour: LANDING_LINE_COLOURS.touchdown },
-          { key: "stop", line: landingArea.stopLine, colour: LANDING_LINE_COLOURS.stop },
-        ].map(({ key, line, colour }) => (
-          <Polyline
-            key={key}
-            positions={line}
-            pathOptions={{ color: colour, weight: 3 }}
-            interactive={false}
-          />
-        ))}
+        {parameters.showLandingArea && (
+          <>
+            <Polygon
+              positions={landingArea.groundRollArea}
+              pathOptions={{
+                stroke: false,
+                fillColor: LANDING_SURFACE_COLOURS[parameters.landingSurface],
+                fillOpacity: 0.55,
+              }}
+              interactive={false}
+            />
+            {[
+              { key: "aim", line: landingArea.aimLine, colour: LANDING_LINE_COLOURS.aim },
+              { key: "touchdown", line: landingArea.touchdownLine, colour: LANDING_LINE_COLOURS.touchdown },
+              { key: "stop", line: landingArea.stopLine, colour: LANDING_LINE_COLOURS.stop },
+            ].map(({ key, line, colour }) => (
+              <Polyline
+                key={key}
+                positions={line}
+                pathOptions={{ color: colour, weight: 3 }}
+                interactive={false}
+              />
+            ))}
+          </>
+        )}
         <Marker
           position={parameters.winchLocation}
           icon={winchIcon}

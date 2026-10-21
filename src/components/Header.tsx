@@ -17,6 +17,7 @@ import { locationOptions, LocationOption } from "../utils/available-sites";
 import { Link } from "react-router-dom";
 import { config } from "../config/env";
 import AppLogo from "./AppLogo";
+import MonitoringToggle from "./MonitoringToggle";
 
 type HeaderProps = {
   isSmallScreen?: boolean;
@@ -155,10 +156,11 @@ const Header: React.FC<HeaderProps> = ({ isSmallScreen, toggleDrawer }) => {
         </Stack>
         {isSmallScreen ? (
           <>
+            <MonitoringToggle isSmallScreen />
             <IconButton
               color={showSearchBar ? "warning" : "inherit"}
               size="small"
-              sx={{ ml: "auto" }}
+              sx={{ ml: 1 }}
               onClick={() => setShowSearchBar(!showSearchBar)}
               aria-label="toggle search">
               <SearchIcon />
@@ -178,6 +180,7 @@ const Header: React.FC<HeaderProps> = ({ isSmallScreen, toggleDrawer }) => {
             direction="row"
             alignItems="center"
             sx={{ marginLeft: "auto" }}>
+            <MonitoringToggle />
             <Stack sx={{ width: "400px" }}>{searchInput}</Stack>
             <Button
               variant="contained"
