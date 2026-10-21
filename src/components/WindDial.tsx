@@ -1,8 +1,18 @@
-import { Chip, Stack, Tooltip, useMediaQuery } from "@mui/material";
-import React from "react";
+import {
+  Chip,
+  CircularProgress,
+  Stack,
+  Tooltip,
+  useMediaQuery,
+} from "@mui/material";
+import { orange } from "@mui/material/colors";
+import { keyframes } from "@mui/material/styles";
+import React, { useEffect, useRef } from "react";
 import { useParameters } from "../context/ParametersContext";
+import { useLiveWind } from "../context/LiveWindContext";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
+import SensorsIcon from "@mui/icons-material/Sensors";
 import { config } from "../config/env";
 import { generateDynamicLaunchProfile } from "../utils";
 import {
@@ -24,6 +34,12 @@ ChartJS.register(
   ChartTooltip,
   Legend,
 );
+
+const livePulse = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(239, 108, 0, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 108, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 108, 0, 0); }
+`;
 
 interface WindDialProps {
   direction: number;
@@ -129,11 +145,85 @@ const CrossWindDial: React.FC<{
   );
 };
 
+const CLOUD_DRIFT_DURATION_MS = 8720; // one full drift across the sky at 50kts
+const CLOUD_MAX_WIND_KTS = 50;
+
+const DriftingCloud: React.FC<{
+  top: string;
+  width: number;
+  startOffset: number; // 0–1, how far through its drift the cloud starts
+  speedFactor: number;
+}> = ({ top, width, startOffset, speedFactor }) => {
+  const layerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<Animation | null>(null);
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+
+  // Drift right to left, into wind for a launch climbing left to right
+  useEffect(() => {
+    const layer = layerRef.current;
+    if (!layer || reduceMotion) return;
+
+    const animation = layer.animate(
+      [{ transform: "translateX(100%)" }, { transform: "translateX(-100%)" }],
+      {
+        duration: CLOUD_DRIFT_DURATION_MS,
+        iterations: Infinity,
+        iterationStart: startOffset,
+      },
+    );
+    animationRef.current = animation;
+
+    return () => {
+      animation.cancel();
+      animationRef.current = null;
+    };
+  }, [reduceMotion, startOffset]);
+
+  // Change speed without restarting, so the cloud doesn't jump
+  useEffect(() => {
+    animationRef.current?.updatePlaybackRate(speedFactor);
+  }, [speedFactor, reduceMotion]);
+
+  return (
+    <div
+      ref={layerRef}
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 1,
+        pointerEvents: "none",
+        // Static position when motion is reduced
+        transform: `translateX(${100 - 200 * startOffset}%)`,
+      }}>
+      <div
+        style={{
+          position: "absolute",
+          top: top,
+          left: 0,
+          width: `${width}px`,
+          height: "10px",
+          backgroundColor: "rgba(255, 255, 255, 0.4)",
+          borderRadius: "10px",
+          boxShadow: `
+            10px 1px 0px -1px rgba(255, 255, 255, 0.3),
+            6px -4px 0px -1px rgba(255, 255, 255, 0.3)
+          `,
+        }}
+      />
+    </div>
+  );
+};
+
 const LaunchProfileMiniChart: React.FC<{
   profileData: number[];
+  windSpeed: number;
   width?: number;
   height?: number;
-}> = ({ profileData, width = 80, height = 60 }) => {
+}> = ({ profileData, windSpeed, width = 80, height = 60 }) => {
+  // Cloud speed is proportional to the 2000ft wind: still at 0kts, full speed at 50kts
+  const cloudSpeedFactor =
+    Math.min(Math.max(windSpeed, 0), CLOUD_MAX_WIND_KTS) / CLOUD_MAX_WIND_KTS;
+
   const chartData = {
     labels: [
       "0%",
@@ -213,69 +303,60 @@ const LaunchProfileMiniChart: React.FC<{
         position: "relative",
         overflow: "hidden",
       }}>
-      <div
-        style={{
-          position: "absolute",
-          top: "15%",
-          left: "-10%",
-          width: "18px",
-          height: "10px",
-          backgroundColor: "rgba(255, 255, 255, 0.4)",
-          borderRadius: "10px",
-          zIndex: 1,
-          boxShadow: `
-            10px 1px 0px -1px rgba(255, 255, 255, 0.3),
-            6px -4px 0px -1px rgba(255, 255, 255, 0.3)
-          `,
-        }}
+      {/* Start offsets match the clouds' original resting positions */}
+      <DriftingCloud
+        top="15%"
+        width={18}
+        startOffset={0.55}
+        speedFactor={cloudSpeedFactor}
+      />
+      {/* Smaller cloud drifts slower, as if further away */}
+      <DriftingCloud
+        top="35%"
+        width={15}
+        startOffset={0.12}
+        speedFactor={cloudSpeedFactor * 0.75}
       />
       <div
         style={{
-          position: "absolute",
-          top: "35%",
-          right: "5%",
-          width: "15px",
-          height: "10px",
-          backgroundColor: "rgba(255, 255, 255, 0.4)",
-          borderRadius: "10px",
-          zIndex: 1,
-          boxShadow: `
-            10px 1px 0px -1px rgba(255, 255, 255, 0.3),
-            6px -4px 0px -1px rgba(255, 255, 255, 0.3)
-          `,
-        }}
-      />
-      <div style={{ width: "100%", height: "100%", zIndex: 2, position: "relative" }}>
+          width: "100%",
+          height: "100%",
+          zIndex: 2,
+          position: "relative",
+        }}>
         <Line data={chartData} options={options} />
       </div>
     </div>
   );
 };
 
-const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ size = 40, isSmallScreen }) => {
+const CompassRose: React.FC<{ size?: number; isSmallScreen?: boolean }> = ({
+  size = 40,
+  isSmallScreen,
+}) => {
   const SCALE_FACTOR = 2.2; // Adjust this single value to make compass bigger/smaller
-  
+
   const height = size * 2; // Maintain 1:2 aspect ratio - SAME as other dials
   const centerX = size / 2;
   const centerY = height / 2; // Center vertically in the same space as other dials
-  const radius = (size * 0.4) * SCALE_FACTOR; // Base radius scaled by factor
-  
+  const radius = size * 0.4 * SCALE_FACTOR; // Base radius scaled by factor
+
   // Generate tick marks and labels for compass
   const majorTicks = [];
   const minorTicks = [];
   const labels = [];
-  
+
   for (let i = 0; i < 360; i += 30) {
     const angle = (i - 90) * (Math.PI / 180); // Rotate so 0° is at top
     const outerRadius = radius * 0.95; // Extend ticks closer to edge
     const innerRadius = radius * 0.7; // Longer tick marks
     const labelRadius = radius * 1.15; // Move labels closer to center for readability
-    
+
     const x1 = centerX + Math.cos(angle) * innerRadius;
     const y1 = centerY + Math.sin(angle) * innerRadius;
     const x2 = centerX + Math.cos(angle) * outerRadius;
     const y2 = centerY + Math.sin(angle) * outerRadius;
-    
+
     majorTicks.push(
       <line
         key={`major-${i}`}
@@ -285,15 +366,15 @@ const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ siz
         y2={y2}
         stroke="rgba(0, 0, 0, 0.2)"
         strokeWidth="1.2"
-      />
+      />,
     );
-    
+
     // Add labels for cardinal directions
     const labelX = centerX + Math.cos(angle) * labelRadius;
     const labelY = centerY + Math.sin(angle) * labelRadius;
-    
+
     if (i % 90 === 0) {
-      const label = i === 0 ? 'N' : i === 90 ? 'E' : i === 180 ? 'S' : 'W';
+      const label = i === 0 ? "N" : i === 90 ? "E" : i === 180 ? "S" : "W";
       labels.push(
         <text
           key={`label-${i}`}
@@ -303,26 +384,26 @@ const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ siz
           dominantBaseline="middle"
           fontSize={size / 5}
           fill="rgba(0, 0, 0, 0.46)"
-          fontWeight="bold"
-        >
+          fontWeight="bold">
           {label}
-        </text>
+        </text>,
       );
     }
   }
-  
+
   // Minor tick marks every 10 degrees
   for (let i = 0; i < 360; i += 10) {
-    if (i % 30 !== 0) { // Skip major tick positions
+    if (i % 30 !== 0) {
+      // Skip major tick positions
       const angle = (i - 90) * (Math.PI / 180);
       const outerRadius = radius * 0.95; // Match major tick outer radius
       const innerRadius = radius * 0.85; // Longer minor ticks
-      
+
       const x1 = centerX + Math.cos(angle) * innerRadius;
       const y1 = centerY + Math.sin(angle) * innerRadius;
       const x2 = centerX + Math.cos(angle) * outerRadius;
       const y2 = centerY + Math.sin(angle) * outerRadius;
-      
+
       minorTicks.push(
         <line
           key={`minor-${i}`}
@@ -332,29 +413,27 @@ const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ siz
           y2={y2}
           stroke="rgba(0, 0, 0, 0.25)"
           strokeWidth="0.5"
-        />
+        />,
       );
     }
   }
-  
+
   return (
     <svg
       width={size}
       height={height}
       xmlns="http://www.w3.org/2000/svg"
-      overflow="visible"
-    >
+      overflow="visible">
       {/* Outer compass ring */}
       <circle
         cx={centerX}
         cy={centerY}
-        r={radius * 0.98} 
+        r={radius * 0.98}
         fill="rgba(255, 255, 255, 0)"
         stroke="rgba(0, 0, 0, 0.2)"
         strokeWidth="1.5"
       />
-    
-      
+
       {/* Tick marks */}
       {isSmallScreen ? null : (
         <>
@@ -365,20 +444,17 @@ const CompassRose: React.FC<{ size?: number, isSmallScreen?: boolean }> = ({ siz
 
       {/* Labels */}
       {labels}
-      
+
       {/* Center dot */}
-      <circle
-        cx={centerX}
-        cy={centerY}
-        r="20"
-        fill="rgba(0, 0, 0, 0.12)"
-      />
+      <circle cx={centerX} cy={centerY} r="20" fill="rgba(0, 0, 0, 0.12)" />
     </svg>
   );
 };
 
 const WindDialContainer: React.FC = () => {
   const { parameters } = useParameters();
+  const { isLoading, lastUpdated } = useLiveWind();
+  const isLive = parameters.windSource === "live";
 
   const surfaceWind = parameters.surfaceWind;
   const twoThousandFtWind = parameters.twoThousandFtWind;
@@ -410,14 +486,15 @@ const WindDialContainer: React.FC = () => {
       style={{
         position: "absolute",
         top: isSmallScreen ? "unset" : "10px",
-        bottom: isSmallScreen ? "60px" : "unset",
+        bottom: isSmallScreen ? "92px" : "unset", // clears the two-row map key on mobile
         right: isSmallScreen ? "unset" : "10px",
         left: isSmallScreen ? "10px" : "unset",
         width: isSmallScreen ? "calc(100% - 20px)" : "auto",
         zIndex: 1000,
-        backgroundColor: "#ffffff94",
+        backgroundColor: "#ffffff7b",
         borderRadius: "8px",
         padding: 10,
+        backdropFilter: "blur(2px)",
       }}>
       <Stack
         direction={isSmallScreen ? "row" : "column"}
@@ -441,7 +518,10 @@ const WindDialContainer: React.FC = () => {
               textAlign: "center",
               zIndex: 0,
             }}>
-            <CompassRose size={isSmallScreen ? 30 : 40} isSmallScreen={isSmallScreen} />
+            <CompassRose
+              size={isSmallScreen ? 30 : 40}
+              isSmallScreen={isSmallScreen}
+            />
           </div>
           <div
             style={{
@@ -456,34 +536,50 @@ const WindDialContainer: React.FC = () => {
               size={isSmallScreen ? 30 : 40}
             />
           </div>
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              textAlign: "center",
-              zIndex: 2,
-            }}>
-            <WindDial
-              direction={surfaceDirection}
-              color="blue"
-              size={isSmallScreen ? 30 : 40}
-            />
-          </div>
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              textAlign: "center",
-              zIndex: 3,
-            }}>
-            <WindDial
-              direction={twoKDirection}
-              color="red"
-              size={isSmallScreen ? 30 : 40}
-            />
-          </div>
+          {isLoading ? (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2,
+              }}>
+              <CircularProgress size={isSmallScreen ? 24 : 32} />
+            </div>
+          ) : (
+            <>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  textAlign: "center",
+                  zIndex: 2,
+                }}>
+                <WindDial
+                  direction={surfaceDirection}
+                  color="blue"
+                  size={isSmallScreen ? 30 : 40}
+                />
+              </div>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  textAlign: "center",
+                  zIndex: 3,
+                }}>
+                <WindDial
+                  direction={twoKDirection}
+                  color="red"
+                  size={isSmallScreen ? 30 : 40}
+                />
+              </div>
+            </>
+          )}
         </div>
         {/* Launch Profile Mini Chart */}
         <Tooltip title="Launch Profile (S-Curve)">
@@ -496,6 +592,7 @@ const WindDialContainer: React.FC = () => {
             }}>
             <LaunchProfileMiniChart
               profileData={dynamicProfileData}
+              windSpeed={twoKSpeed}
               width={isSmallScreen ? 70 : 80}
               height={isSmallScreen ? 45 : 50}
             />
@@ -509,6 +606,35 @@ const WindDialContainer: React.FC = () => {
             maxWidth: isSmallScreen ? "calc(100% - 140px)" : "auto",
             gap: isSmallScreen ? 1 : 0,
           }}>
+          {isLive && (
+            <Tooltip
+              title={
+                lastUpdated
+                  ? `Live wind – updated ${lastUpdated.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`
+                  : "Fetching live wind…"
+              }>
+              <Chip
+                label="Live"
+                variant="outlined"
+                sx={{
+                  flexGrow: 1,
+                  bgcolor: orange[100],
+                  borderColor: orange[800],
+                  color: orange[900],
+                  "& .MuiChip-icon": { color: orange[900] },
+                  animation: `${livePulse} 2s ease-out infinite`,
+                  "@media (prefers-reduced-motion: reduce)": {
+                    animation: "none",
+                  },
+                }}
+                size="small"
+                icon={<SensorsIcon />}
+              />
+            </Tooltip>
+          )}
           <Tooltip title="Surface Wind">
             <Chip
               label={`${surfaceDirectionStr}° ${surfaceSpeed}kts`}

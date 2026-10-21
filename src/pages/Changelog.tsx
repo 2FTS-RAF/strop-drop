@@ -13,6 +13,68 @@ interface ChangelogEntry {
 
 const changelogData: ChangelogEntry[] = [
   {
+    version: "1.2",
+    date: "2026-10-21",
+    type: "minor",
+    changes: [
+      {
+        category: "added",
+        description:
+          "Live wind: surface and 2000ft winds from the Met Office UKMO model (via Open-Meteo) at the launch point, updated every 5 minutes",
+      },
+      {
+        category: "added",
+        description:
+          "Live / Manual wind toggle, with a pulsing Live badge on the wind panel",
+      },
+      {
+        category: "added",
+        description:
+          "Message when live wind is unavailable and the app switches to manual wind, with a chime in monitoring mode",
+      },
+      {
+        category: "added",
+        description:
+          "Airfield boundaries for Cranwell and RAF Syerston drawn on the map",
+      },
+      {
+        category: "added",
+        description:
+          "Boundary alert: message when the strop impact area crosses an airfield boundary; in monitoring mode it flashes and sounds an alarm, with snooze and stop options",
+      },
+      {
+        category: "added",
+        description:
+          "Monitoring mode: optional audible alerts for boundary crossings and live wind dropouts, switched on from the header (off by default)",
+      },
+      {
+        category: "added",
+        description:
+          "ASK 21 landing area: aim point, touchdown and stop lines behind the launch point, with the ground roll shaded by runway surface",
+      },
+      {
+        category: "added",
+        description:
+          "Landing Area settings: show or hide the landing area on the map, runway surface, pilot ability safety factor and a diagram of the landing distances",
+      },
+      {
+        category: "added",
+        description:
+          "Clouds in the launch profile graphic drift with the 2000ft wind",
+      },
+      {
+        category: "changed",
+        description:
+          "Map key now includes Airfield Boundary, Aim Point and Touchdown, and uses two rows on mobile",
+      },
+      {
+        category: "fixed",
+        description:
+          "The settings panel now scrolls on its own, so opening a long section no longer pushes the map off the screen",
+      },
+    ],
+  },
+  {
     version: "1.1",
     date: "2026-02-27",
     type: "major",
@@ -104,7 +166,11 @@ const ChangelogPage = () => {
       </Stack>
 
       <Box sx={{ mt: 4, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
-        <Typography variant="body2" color="text.secondary" align="center">
+        <Typography
+          component="div"
+          variant="body2"
+          color="text.secondary"
+          align="center">
           <strong>Legend:</strong>
           <Chip
             label="ADDED"

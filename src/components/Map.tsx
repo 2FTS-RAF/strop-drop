@@ -24,8 +24,15 @@ import {
   calculateStropHeights,
   calculateWindComponents,
   calculateWindGradient,
+  findCrossedBoundaries,
+  calculateLandingArea,
+  getLandingDistances,
+  LANDING_LINE_COLOURS,
+  LANDING_SURFACE_COLOURS,
 } from "../utils";
+import { locationOptions } from "../utils/available-sites";
 import MapKeyContainer from "./MapKey";
+import BoundaryAlert from "./BoundaryAlert";
 
 type Coordinate = {
   lat: number;
@@ -269,6 +276,35 @@ const Map = () => {
   // >([]);
 
   const [sausagePolygon, setSausagePolygon] = React.useState<Coordinate[]>([]);
+
+  const landingDistances = React.useMemo(
+    () =>
+      getLandingDistances(
+        parameters.headWindComponent,
+        parameters.landingSurface,
+        parameters.landingSafetyFactor,
+      ),
+    [
+      parameters.headWindComponent,
+      parameters.landingSurface,
+      parameters.landingSafetyFactor,
+    ],
+  );
+
+  const landingArea = React.useMemo(
+    () =>
+      calculateLandingArea(
+        parameters.launchPoint,
+        parameters.RWYHeading,
+        landingDistances,
+      ),
+    [parameters.launchPoint, parameters.RWYHeading, landingDistances],
+  );
+
+  const crossedBoundaries = React.useMemo(
+    () => findCrossedBoundaries(sausagePolygon, locationOptions),
+    [sausagePolygon],
+  );
   //const [RWYHeading, setRWYHeading] = React.useState<number>(0);
   // Create a custom yellow circle icon
   const winchIcon = L.divIcon({
@@ -556,6 +592,48 @@ const Map = () => {
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           attribution="&copy; <a href='https://www.esri.com/'>Esri</a> contributors"
         />
+        {/* Airfield boundaries */}
+        {locationOptions
+          .filter((site) => site.boundary)
+          .map((site) => (
+            <Polygon
+              key={site.name}
+              positions={site.boundary!}
+              pathOptions={{
+                color: "#4fc3f7",
+                weight: 2,
+                dashArray: "6, 6",
+                fill: false,
+              }}
+              interactive={false}
+            />
+          ))}
+        {/* Landing area behind the launch point; shading covers the ground roll only */}
+        {parameters.showLandingArea && (
+          <>
+            <Polygon
+              positions={landingArea.groundRollArea}
+              pathOptions={{
+                stroke: false,
+                fillColor: LANDING_SURFACE_COLOURS[parameters.landingSurface],
+                fillOpacity: 0.55,
+              }}
+              interactive={false}
+            />
+            {[
+              { key: "aim", line: landingArea.aimLine, colour: LANDING_LINE_COLOURS.aim },
+              { key: "touchdown", line: landingArea.touchdownLine, colour: LANDING_LINE_COLOURS.touchdown },
+              { key: "stop", line: landingArea.stopLine, colour: LANDING_LINE_COLOURS.stop },
+            ].map(({ key, line, colour }) => (
+              <Polyline
+                key={key}
+                positions={line}
+                pathOptions={{ color: colour, weight: 3 }}
+                interactive={false}
+              />
+            ))}
+          </>
+        )}
         <Marker
           position={parameters.winchLocation}
           icon={winchIcon}
@@ -770,6 +848,7 @@ const Map = () => {
         />
       </MapContainer>
       <WindDialContainer />
+      <BoundaryAlert crossedBoundaries={crossedBoundaries} />
       <MapKeyContainer />
     </div>
   );
