@@ -32,6 +32,8 @@ export interface Parameters {
   windSource: "live" | "manual";
   landingSurface: RunwaySurface;
   landingSafetyFactor: number;
+  monitoringMode: boolean;
+  showLandingArea: boolean;
 }
 
 export interface ParametersContextType {
@@ -62,6 +64,8 @@ const defaultParameters: Omit<
   windSource: "live",
   landingSurface: "dryGrass",
   landingSafetyFactor: DEFAULT_LANDING_SAFETY_FACTOR,
+  monitoringMode: false,
+  showLandingArea: true,
 };
 
 const defaultStrop = {

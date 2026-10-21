@@ -11,6 +11,8 @@ import {
   Link,
   ToggleButton,
   ToggleButtonGroup,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { createSvgIcon } from "@mui/material/utils";
@@ -113,7 +115,10 @@ const SettingsPanel = () => {
 
   const appOrg = config.APP_ORGANIZATION;
 
-  const handleChange = (key: string, value: string | number | object) => {
+  const handleChange = (
+    key: string,
+    value: string | number | boolean | object,
+  ) => {
     setParameters((prev) => ({
       ...prev,
       [key]: value,
@@ -450,6 +455,19 @@ const SettingsPanel = () => {
         </AccordionSummary>
         <AccordionDetails>
           <Stack spacing={2}>
+            {/* Some airfields land away from the launch point, where the graphic is a distraction */}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={parameters.showLandingArea}
+                  onChange={(event) =>
+                    handleChange("showLandingArea", event.target.checked)
+                  }
+                />
+              }
+              label="Show landing area on map"
+              slotProps={{ typography: { variant: "body2" } }}
+            />
             <Stack
               direction="row"
               spacing={1}

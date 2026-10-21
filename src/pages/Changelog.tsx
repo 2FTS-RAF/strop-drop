@@ -14,7 +14,7 @@ interface ChangelogEntry {
 const changelogData: ChangelogEntry[] = [
   {
     version: "1.2",
-    date: "2026-10-18",
+    date: "2026-10-21",
     type: "minor",
     changes: [
       {
@@ -30,7 +30,7 @@ const changelogData: ChangelogEntry[] = [
       {
         category: "added",
         description:
-          "Message and chime when live wind is unavailable and the app switches to manual wind",
+          "Message when live wind is unavailable and the app switches to manual wind, with a chime in monitoring mode",
       },
       {
         category: "added",
@@ -40,7 +40,12 @@ const changelogData: ChangelogEntry[] = [
       {
         category: "added",
         description:
-          "Boundary alert: flashing banner and alarm when the strop impact area crosses an airfield boundary, with snooze and cease options",
+          "Boundary alert: message when the strop impact area crosses an airfield boundary; in monitoring mode it flashes and sounds an alarm, with snooze and stop options",
+      },
+      {
+        category: "added",
+        description:
+          "Monitoring mode: optional audible alerts for boundary crossings and live wind dropouts, switched on from the header (off by default)",
       },
       {
         category: "added",
@@ -50,7 +55,7 @@ const changelogData: ChangelogEntry[] = [
       {
         category: "added",
         description:
-          "Landing Area settings: runway surface, pilot ability safety factor and a diagram of the landing distances",
+          "Landing Area settings: show or hide the landing area on the map, runway surface, pilot ability safety factor and a diagram of the landing distances",
       },
       {
         category: "added",

@@ -4,6 +4,7 @@ import {
   AlertTitle,
   Button,
   Stack,
+  Typography,
   useMediaQuery,
 } from "@mui/material";
 import { alpha, keyframes } from "@mui/material/styles";
@@ -11,6 +12,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import SnoozeIcon from '@mui/icons-material/Snooze';
 import { installAudioUnlock, startAlarm, stopAlarm } from "../utils/alarm-sound";
+import { useMonitoring } from "../context/MonitoringContext";
 
 const SNOOZE_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -24,8 +26,7 @@ const BoundaryAlert: React.FC<{ crossedBoundaries: string[] }> = ({
   crossedBoundaries,
 }) => {
   const [snoozedUntil, setSnoozedUntil] = useState<Date | null>(null);
-  // Not persisted: alarms are always back on after a reload
-  const [alarmsCeased, setAlarmsCeased] = useState(false);
+  const { isMonitoring, requestStopMonitoring } = useMonitoring();
   const isSmallScreen = useMediaQuery("(max-width: 768px)");
 
   // App.css forces 16px on all buttons; smaller on phones so both banner buttons fit on one row
@@ -34,7 +35,8 @@ const BoundaryAlert: React.FC<{ crossedBoundaries: string[] }> = ({
   };
 
   const isCrossing = crossedBoundaries.length > 0;
-  const isAlarmActive = isCrossing && !snoozedUntil && !alarmsCeased;
+  // Sound and the flashing banner only in monitoring mode; otherwise just a message
+  const isAlarmActive = isMonitoring && isCrossing && !snoozedUntil;
 
   // Browsers block audio until the user interacts with the page
   useEffect(() => installAudioUnlock(), []);
@@ -57,41 +59,33 @@ const BoundaryAlert: React.FC<{ crossedBoundaries: string[] }> = ({
     return () => clearTimeout(timer);
   }, [snoozedUntil]);
 
-  const snooze = () => setSnoozedUntil(new Date(Date.now() + SNOOZE_MS));
+  // Turning monitoring off clears any snooze
+  useEffect(() => {
+    if (!isMonitoring) setSnoozedUntil(null);
+  }, [isMonitoring]);
 
-  const ceaseAlarms = () => {
-    setAlarmsCeased(true);
-    setSnoozedUntil(null);
-  };
+  const snooze = () => setSnoozedUntil(new Date(Date.now() + SNOOZE_MS));
 
   if (!isCrossing) return null;
 
   let content: React.ReactNode;
 
-  if (alarmsCeased) {
+  if (!isMonitoring) {
     content = (
       <Alert
         severity="error"
         variant="filled"
-        icon={<NotificationsOffIcon fontSize="small" />}
-        action={
-          <Button
-            color="inherit"
-            size="small"
-            sx={buttonSx}
-            onClick={() => setAlarmsCeased(false)}>
-            Undo
-          </Button>
-        }
+        icon={<WarningIcon />}
         sx={{
-          py: 0,
-          borderRadius: 4,
-          alignItems: "center",
-          "& .MuiAlert-icon, & .MuiAlert-action": { py: 0, pt: 0 },
           bgcolor: (theme) => alpha(theme.palette.error.main, 0.6),
           backdropFilter: "blur(2px)",
         }}>
-        Outside boundary – all alarms ceased
+        <AlertTitle sx={{ mb: 0 }}>
+          Strop impact area crosses the airfield boundary
+        </AlertTitle>
+        <Typography variant="caption">
+          Monitoring is off – no audible alert
+        </Typography>
       </Alert>
     );
   } else if (snoozedUntil) {
@@ -164,15 +158,16 @@ const BoundaryAlert: React.FC<{ crossedBoundaries: string[] }> = ({
             variant="outlined"
             startIcon={isSmallScreen ? undefined : <NotificationsOffIcon />}
             sx={buttonSx}
-            onClick={ceaseAlarms}>
-            Cease all alerts
+            onClick={requestStopMonitoring}>
+            Stop monitoring
           </Button>
         </Stack>
       </Alert>
     );
   }
 
-  const isBanner = !alarmsCeased && !snoozedUntil;
+  // Full width for the banner and the passive message; the snooze reminder sizes to fit
+  const isBanner = !isMonitoring || !snoozedUntil;
 
   return (
     // Sits between the zoom controls and, on desktop, the wind dial

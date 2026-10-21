@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Alert, Snackbar } from "@mui/material";
 import { useLiveWind } from "../context/LiveWindContext";
+import { useMonitoring } from "../context/MonitoringContext";
 import {
   installAudioUnlock,
   startChime,
@@ -9,18 +10,20 @@ import {
 
 const LiveWindErrorSnackbar = () => {
   const { error, dismissError } = useLiveWind();
+  const { isMonitoring } = useMonitoring();
   const isOpen = error !== null;
+  const isChiming = isOpen && isMonitoring;
 
   // Browsers block audio until the user interacts with the page
   useEffect(() => installAudioUnlock(), []);
 
-  // Chime occasionally until the message is dismissed
+  // In monitoring mode, chime occasionally until the message is dismissed
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isChiming) return;
 
     startChime();
     return () => stopChime();
-  }, [isOpen]);
+  }, [isChiming]);
 
   return (
     // Stays open until dismissed, so the chime only stops when the user acknowledges it
@@ -29,7 +32,9 @@ const LiveWindErrorSnackbar = () => {
       onClose={(_, reason) => {
         if (reason !== "clickaway") dismissError();
       }}
-      anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+      anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      // Below the header (56px on phones, 64px wider) so the monitoring switch stays visible
+      sx={{ top: { xs: 64, sm: 76 } }}>
       <Alert
         onClose={dismissError}
         severity="error"

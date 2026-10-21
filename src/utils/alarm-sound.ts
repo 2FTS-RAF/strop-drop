@@ -135,30 +135,43 @@ const CHIME_INTERVAL_S = 10;
 const CHIME_NOTES_HZ = [1046.5, 1318.5]; // C6, E6
 const CHIME_NOTE_GAP_S = 0.18;
 const CHIME_NOTE_DURATION_S = 0.9;
+const CHIME_VOLUME = 0.25;
 
-const chime = createRepeatingSound(
-  CHIME_INTERVAL_S,
-  0.25,
-  (context, output, start) => {
-    CHIME_NOTES_HZ.forEach((frequency, i) => {
-      const noteStart = start + i * CHIME_NOTE_GAP_S;
-      const oscillator = context.createOscillator();
-      const envelope = context.createGain();
-      oscillator.type = "sine";
-      oscillator.frequency.value = frequency;
-      // Quick attack, bell-like decay
-      envelope.gain.setValueAtTime(0, noteStart);
-      envelope.gain.linearRampToValueAtTime(1, noteStart + 0.01);
-      envelope.gain.exponentialRampToValueAtTime(
-        0.001,
-        noteStart + CHIME_NOTE_DURATION_S,
-      );
-      oscillator.connect(envelope).connect(output);
-      oscillator.start(noteStart);
-      oscillator.stop(noteStart + CHIME_NOTE_DURATION_S);
-    });
-  },
-);
+const scheduleChime: ScheduleCycle = (context, output, start) => {
+  CHIME_NOTES_HZ.forEach((frequency, i) => {
+    const noteStart = start + i * CHIME_NOTE_GAP_S;
+    const oscillator = context.createOscillator();
+    const envelope = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+    // Quick attack, bell-like decay
+    envelope.gain.setValueAtTime(0, noteStart);
+    envelope.gain.linearRampToValueAtTime(1, noteStart + 0.01);
+    envelope.gain.exponentialRampToValueAtTime(
+      0.001,
+      noteStart + CHIME_NOTE_DURATION_S,
+    );
+    oscillator.connect(envelope).connect(output);
+    oscillator.start(noteStart);
+    oscillator.stop(noteStart + CHIME_NOTE_DURATION_S);
+  });
+};
+
+const chime = createRepeatingSound(CHIME_INTERVAL_S, CHIME_VOLUME, scheduleChime);
 
 export const startChime = chime.start;
 export const stopChime = chime.stop;
+
+// A single chime, e.g. to confirm sound is working
+export const playChimeOnce = () => {
+  const context = getAudioContext();
+  context.resume().catch(() => {
+    /* plays once a user gesture unlocks audio */
+  });
+
+  const output = context.createGain();
+  output.gain.value = CHIME_VOLUME;
+  output.connect(context.destination);
+  scheduleChime(context, output, context.currentTime + 0.05);
+  setTimeout(() => output.disconnect(), 2000);
+};

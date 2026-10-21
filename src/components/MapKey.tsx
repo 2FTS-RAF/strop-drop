@@ -1,9 +1,11 @@
 import { Chip, Stack, Typography, useMediaQuery } from "@mui/material";
 import React from "react";
 import { LANDING_LINE_COLOURS } from "../utils/landing-area";
+import { useParameters } from "../context/ParametersContext";
 
 const MapKeyContainer: React.FC = () => {
   const isSmallScreen = useMediaQuery("(max-width: 768px)"); // iPad landscape width is 1024px
+  const { parameters } = useParameters();
 
   const areaKeys = (
     <>
@@ -36,24 +38,29 @@ const MapKeyContainer: React.FC = () => {
           backgroundColor: "#ffffffcc",
         }}
       />
-      <Chip
-        label="Aim Point"
-        size="small"
-        sx={{
-          flexGrow: 1,
-          bgcolor: LANDING_LINE_COLOURS.aim,
-          color: "common.white",
-        }}
-      />
-      <Chip
-        label="Touchdown"
-        size="small"
-        sx={{
-          flexGrow: 1,
-          bgcolor: LANDING_LINE_COLOURS.touchdown,
-          color: "common.black",
-        }}
-      />
+      {/* Only explain the landing lines when they are drawn */}
+      {parameters.showLandingArea && (
+        <>
+          <Chip
+            label="Aim Point"
+            size="small"
+            sx={{
+              flexGrow: 1,
+              bgcolor: LANDING_LINE_COLOURS.aim,
+              color: "common.white",
+            }}
+          />
+          <Chip
+            label="Touchdown"
+            size="small"
+            sx={{
+              flexGrow: 1,
+              bgcolor: LANDING_LINE_COLOURS.touchdown,
+              color: "common.black",
+            }}
+          />
+        </>
+      )}
     </>
   );
 
